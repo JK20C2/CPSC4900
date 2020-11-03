@@ -9,3 +9,8 @@ The scoring is described in the rules section shown when you press the "Show rul
 button on the bottom left of the interface.
 
 To star a new game press the "New Game" button. 
+
+
+This is a version where we are trying to use the source code from this game to make
+a game that is called Dealer's Dozen.
+This is a variation of solitaire but not as common as Klondike.
