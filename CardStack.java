@@ -6,6 +6,7 @@ import java.util.ListIterator;
 import java.util.Vector;
 
 import javax.swing.JComponent;
+// test comment
 
 /* This is GUI component with a embedded
  * data structure. This structure is a mixture
