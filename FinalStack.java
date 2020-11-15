@@ -1,3 +1,5 @@
+package internal;
+
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -5,12 +7,17 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.RoundRectangle2D;
 
+import main.Solitaire;
+
 /*
  * Adapts the CardStack to be used as the final
  * (foundation) stack
  */
-class FinalStack extends CardStack
+public class FinalStack extends CardStack
 {
+
+	private static final long serialVersionUID = 1L;
+
 	public FinalStack()
 	{
 		super(false);
@@ -55,3 +62,4 @@ class FinalStack extends CardStack
 
 	}
 }
+

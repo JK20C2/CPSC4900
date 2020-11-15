@@ -1,4 +1,5 @@
-//Checking push for Card.java
+package internal;
+
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -8,15 +9,15 @@ import java.awt.geom.RoundRectangle2D;
 
 import javax.swing.JPanel;
 
-class Card extends JPanel
-{
-	public static enum Value
-	{
+public class Card extends JPanel {
+
+	private static final long serialVersionUID = 1L;
+
+	public static enum Value {
 		ACE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN, JACK, QUEEN, KING
 	}
 
-	public static enum Suit
-	{
+	public static enum Suit {
 		SPADES, CLUBS, DIAMONDS, HEARTS
 	}
 
@@ -28,7 +29,7 @@ class Card extends JPanel
 
 	private Point _location; // location relative to container
 
-	private Point whereAmI; // used to create abs postion rectangle for contains
+	private Point whereAmI; // used to create abs position rectangle for contains
 	// functions
 
 	private int x; // used for relative positioning within CardStack Container
@@ -37,14 +38,13 @@ class Card extends JPanel
 	private final int x_offset = 10;
 	private final int y_offset = 20;
 	private final int new_x_offset = x_offset + (CARD_WIDTH - 30);
+
+	// Card Measurements
 	final static public int CARD_HEIGHT = 150;
-
 	final static public int CARD_WIDTH = 100;
-
 	final static public int CORNER_ANGLE = 25;
 
-	Card(Suit suit, Value value)
-	{
+	Card(Suit suit, Value value) {
 		_suit = suit;
 		_value = value;
 		_faceup = false;
@@ -56,8 +56,7 @@ class Card extends JPanel
 		whereAmI = new Point();
 	}
 
-	Card()
-	{
+	public Card() {
 		_suit = Card.Suit.CLUBS;
 		_value = Card.Value.ACE;
 		_faceup = false;
@@ -69,145 +68,73 @@ class Card extends JPanel
 		whereAmI = new Point();
 	}
 
-	public Suit getSuit()
-	{
-		switch (_suit)
-		{
-		case HEARTS:
-			System.out.println("Hearts");
-			break;
-		case DIAMONDS:
-			System.out.println("Diamonds");
-			break;
-		case SPADES:
-			System.out.println("Spades");
-			break;
-		case CLUBS:
-			System.out.println("Clubs");
-			break;
-		}
+	public Suit getSuit() {
 		return _suit;
 	}
 
-	public Value getValue()
-	{
-		switch (_value)
-		{
-		case ACE:
-			System.out.println(" Ace");
-			break;
-		case TWO:
-			System.out.println(" 2");
-			break;
-		case THREE:
-			System.out.println(" 3");
-			break;
-		case FOUR:
-			System.out.println(" 4");
-			break;
-		case FIVE:
-			System.out.println(" 5");
-			break;
-		case SIX:
-			System.out.println(" 6");
-			break;
-		case SEVEN:
-			System.out.println(" 7");
-			break;
-		case EIGHT:
-			System.out.println(" 8");
-			break;
-		case NINE:
-			System.out.println(" 9");
-			break;
-		case TEN:
-			System.out.println(" 10");
-			break;
-		case JACK:
-			System.out.println(" Jack");
-			break;
-		case QUEEN:
-			System.out.println(" Queen");
-			break;
-		case KING:
-			System.out.println(" King");
-			break;
-		}
+	public Value getValue() {
 		return _value;
 	}
 
-	public void setWhereAmI(Point p)
-	{
+	public void setWhereAmI(Point p) {
 		whereAmI = p;
 	}
 
-	public Point getWhereAmI()
-	{
+	public Point getWhereAmI() {
 		return whereAmI;
 	}
 
-	public Point getXY()
-	{
+	public Point getXY() {
 		return new Point(x, y);
 	}
 
-	public Boolean getFaceStatus()
-	{
+	public Boolean getFaceStatus() {
 		return _faceup;
 	}
 
-	public void setXY(Point p)
-	{
+	public void setXY(Point p) {
 		x = p.x;
 		y = p.y;
 
 	}
 
-	public void setSuit(Suit suit)
-	{
+	public void setSuit(Suit suit) {
 		_suit = suit;
 	}
 
-	public void setValue(Value value)
-	{
+	public void setValue(Value value) {
 		_value = value;
 	}
 
-	public Card setFaceup()
-	{
+	public Card setFaceup() {
 		_faceup = true;
 		return this;
 	}
 
-	public Card setFacedown()
-	{
+	public Card setFacedown() {
 		_faceup = false;
 		return this;
 	}
 
 	@Override
-	public boolean contains(Point p)
-	{
+	public boolean contains(Point p) {
 		Rectangle rect = new Rectangle(whereAmI.x, whereAmI.y, Card.CARD_WIDTH, Card.CARD_HEIGHT);
 		return (rect.contains(p));
 	}
 
-	private void drawSuit(Graphics2D g, String suit, Color color)
-	{
+	private void drawSuit(Graphics2D g, String suit, Color color) {
 		g.setColor(color);
 		g.drawString(suit, _location.x + x_offset, _location.y + y_offset);
 		g.drawString(suit, _location.x + x_offset, _location.y + CARD_HEIGHT - 5);
 	}
 
-	private void drawValue(Graphics2D g, String value)
-	{
+	private void drawValue(Graphics2D g, String value) {
 		g.drawString(value, _location.x + new_x_offset, _location.y + y_offset);
 		g.drawString(value, _location.x + new_x_offset, _location.y + y_offset + CARD_HEIGHT - 25);
 	}
 
 	@Override
-	public void paintComponent(Graphics g)
-	{
+	public void paintComponent(Graphics g) {
 		Graphics2D g2d = (Graphics2D) g;
 		RoundRectangle2D rect2 = new RoundRectangle2D.Double(_location.x, _location.y, CARD_WIDTH, CARD_HEIGHT,
 				CORNER_ANGLE, CORNER_ANGLE);
@@ -216,10 +143,8 @@ class Card extends JPanel
 		g2d.setColor(Color.black);
 		g2d.draw(rect2);
 		// DRAW THE CARD SUIT AND VALUE IF FACEUP
-		if (_faceup)
-		{
-			switch (_suit)
-			{
+		if (_faceup) {
+			switch (_suit) {
 			case HEARTS:
 				drawSuit(g2d, "Hearts", Color.RED);
 				break;
@@ -233,9 +158,8 @@ class Card extends JPanel
 				drawSuit(g2d, "Clubs", Color.BLACK);
 				break;
 			}
-			int new_x_offset = x_offset + (CARD_WIDTH - 30);
-			switch (_value)
-			{
+
+			switch (_value) {
 			case ACE:
 				drawValue(g2d, "A");
 				break;
@@ -276,8 +200,7 @@ class Card extends JPanel
 				drawValue(g2d, "K");
 				break;
 			}
-		} else
-		{
+		} else {
 			// DRAW THE BACK OF THE CARD IF FACEDOWN
 			RoundRectangle2D rect = new RoundRectangle2D.Double(_location.x, _location.y, CARD_WIDTH, CARD_HEIGHT,
 					CORNER_ANGLE, CORNER_ANGLE);
@@ -290,8 +213,3 @@ class Card extends JPanel
 	}
 
 }// END Card
-
-public static void main(String[] args)
-{
-    
-}
