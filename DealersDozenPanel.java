@@ -116,6 +116,7 @@ public class DealersDozenPanel extends JPanel {
 
 				twos.add(card);
 				deck.getAllCards().remove(card);
+				card.setFaceup();	//shows 2's faceup
 			}
 		}
 
