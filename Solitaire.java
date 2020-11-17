@@ -1,178 +1,381 @@
-package dealdozen;
+//package main;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Vector;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JEditorPane;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
+import dealersdozen.DealersDozenPanel;
 import internal.Card;
 import internal.CardStack;
 import internal.FinalStack;
-import main.Solitaire;
+import internal.GameType;
 
-/**
- * The JPanel subclass for handling deal dozen version of the game
- *
- */
-public class DealDozenPanel extends JPanel {
+public class Solitaire {
 
-	private static final int FOUNDATION_STACKS = 4;
-	private static final int TABLEAU_STACKS = 4;
+	// CONSTANTS
+	public static final int NUM_FINAL_DECKS = 4;
+	public static final int NUM_PLAY_DECKS = 7;
+	public static final int TABLE_HEIGHT = Card.CARD_HEIGHT * 4;
+	public static final int TABLE_WIDTH = (Card.CARD_WIDTH * 7) + 100;
+	public static final Point DECK_POS = new Point(5, 5);
+	public static final Point SHOW_POS = new Point(DECK_POS.x + Card.CARD_WIDTH + 5, DECK_POS.y);
+	public static final Point FINAL_POS = new Point(SHOW_POS.x + Card.CARD_WIDTH + 150, DECK_POS.y);
+	public static final Point PLAY_POS = new Point(DECK_POS.x, FINAL_POS.y + Card.CARD_HEIGHT + 30);
 
-	public static final Point DECK_POS = new Point(8, 8);
-	public static final Point WASTE_POS = new Point(DECK_POS.x + Card.CARD_WIDTH + 8, DECK_POS.y);
-	public static final Point FOUNDATION_POS = new Point(WASTE_POS.x + Card.CARD_WIDTH + 150, DECK_POS.y);
-	public static final Point REVERSE_POS = new Point(WASTE_POS.x, WASTE_POS.y + Card.CARD_HEIGHT + 32);
-	public static final Point TABLEAU_POS = new Point(DECK_POS.x + Card.CARD_WIDTH * 3,
-			FOUNDATION_POS.y + Card.CARD_HEIGHT + 30);
+	private static final String DEAL_DOZEN_RULES = "<b>Dealers Dozen Solitaire Rules</b>"
+			+ "<br><br>Uses the standard 52 card deck. "
+			+ "You have 4 tableau piles (with one card per pile) and a reserve pile with 12 cards in it. Twos are removed from the deck to form 4 foundations."
+			+ " You may build tableaus down in suit. Only the top card of each tableau pile and the reserve pile is available for play on the foundations. "
+			+ "Foundations are built up to aces (ace high). One card or group of cards in the proper sequence can be moved to another tableau pile."
+			+ " When one of the tableaus is empty it immediately fills with a card from the reserve pile if possible, then by any card."
+			+ " When you have madee all the moves initially available, begin turning over cards from the stockpile to the waste pile. "
+			+ "You have two redeals. Four tableaus are built down in alternating color more similar to Klondike Solitaire (Source code)";
+
+	private static final String KLONDIKE_RULES = "<b>Klondike Solitaire Rules</b>"
+			+ "<br><br> (From Wikipedia) Taking a shuffled standard 52-card deck of playing cards (without Jokers),"
+			+ " one upturned card is dealt on the left of the playing area, then six downturned cards"
+			+ " (from left to right).<p> On top of the downturned cards, an upturned card is dealt on the "
+			+ "left-most downturned pile, and downturned cards on the rest until all piles have an "
+			+ "upturned card. The piles should look like the figure to the right.<p>The four foundations "
+			+ "(light rectangles in the upper right of the figure) are built up by suit from Ace "
+			+ "(low in this game) to King, and the tableau piles can be built down by alternate colors,"
+			+ " and partial or complete piles can be moved if they are built down by alternate colors also. "
+			+ "Any empty piles can be filled with a King or a pile of cards with a King.<p> The point of "
+			+ "the game is to build up a stack of cards starting with 2 and ending with King, all of "
+			+ "the same suit. Once this is accomplished, the goal is to move this to a foundation, "
+			+ "where the player has previously placed the Ace of that suit. Once the player has done this, "
+			+ "they will have \"finished\" that suit- the goal being, of course, to finish all suits, "
+			+ "at which time the player will have won.<br><br><b> Scoring </b><br><br>"
+			+ "Moving cards directly from the Waste stack to a Foundation awards 10 points. However, "
+			+ "if the card is first moved to a Tableau, and then to a Foundation, then an extra 5 points "
+			+ "are received for a total of 15. Thus in order to receive a maximum score, no cards should be moved "
+			+ "directly from the Waste to Foundation.<p>	Time can also play a factor in Windows Solitaire, if the Timed game option is selected. For every 10 seconds of play, 2 points are taken away."
+			+ "<b><br><br>Notes On My Implementation</b><br><br>"
+			+ "Drag cards to and from any stack. As long as the move is valid the card, or stack of "
+			+ "cards, will be repositioned in the desired spot. The game follows the standard scoring and time"
+			+ " model explained above with only one waste card shown at a time."
+			+ "<p> The timer starts running as soon as "
+			+ "the game begins, but it may be paused by pressing the pause button at the bottom of" + "the screen. ";
+
+	// GAMEPLAY STRUCTURES
+	private static FinalStack[] final_cards;// Foundation Stacks
+	private static CardStack[] playCardStack; // Tableau stacks
+	private static final Card newCardPlace = new Card();// waste card spot
+	private static CardStack deck; // populated with standard 52 card deck
+
+	// Set Klondike as the default game
+	private static GameType currentGame = GameType.Klondike;
 
 	/**
-	 * Track version changes of the class
+	 * Window frame
 	 */
-	private static final long serialVersionUID = 1L;
-	private int height;
-	private int width;
+	private static final JFrame frame = new JFrame("Klondike Solitaire");
 
-	private static FinalStack[] foundationStacks;
-	private static CardStack[] tableauStacks;
-	private static CardStack reversePile;
-	private static CardStack deck;
-	private static CardStack wastePile;
-	private static Card deckPlaceHolder = new Card();
+	/**
+	 * Frame panel
+	 */
+	private static final JPanel mainPanel = new JPanel();
+	protected static final JPanel table = new JPanel();
+	private static final JPanel statusBarPanel = new JPanel();
 
-	public DealDozenPanel(int width, int height) {
-		this.width = width;
-		this.height = height;
+	/**
+	 * Rules Dialog Pane
+	 */
+	private static JEditorPane gameTitle = new JEditorPane("text/html", "");
 
-		initPanel();
+	/**
+	 * Status Bar Components
+	 */
+	private static JButton showRulesButton = new JButton("Show Rules");
+	private static JButton newGameButton = new JButton("New Game");
+	private static JButton toggleTimerButton = new JButton("Pause Timer");
+	private static JTextField scoreBox = new JTextField();// displays the score
+	private static JTextField timeBox = new JTextField();// displays the time
+	private static JTextField statusBox = new JTextField();// status messages
 
-		startGame();
+	private static final Card newCardButton = new Card();// reveal waste card
+
+	/**
+	 * Keep track of time
+	 */
+	private static Timer timer = new Timer();
+	private static ScoreClock scoreClock = new ScoreClock();
+
+	// MISC TRACKING VARIABLES
+	/**
+	 * A flag of whether the time is running or not, to update the time text field
+	 */
+	private static boolean timeRunning = false;// timer running?
+
+	/**
+	 * Keep track of the score
+	 */
+	private static int score = 0;// keep track of the score
+
+	/**
+	 * Keep track of time that has elapsed
+	 */
+	private static int time = 0;// keep track of seconds elapsed
+
+	/**
+	 * The window menu bar
+	 */
+	private static JMenuBar theMenuBar;
+	/**
+	 * The menu bar options
+	 */
+	private static JMenu fileMenu, gameMenu;
+
+	/**
+	 * All the menu items
+	 */
+	private static JMenuItem quitMenuItem, dealersDozenMenuItem, dawsonMenuItem, duchessMenuItem, divorceMenuItem,
+			doubleMenuItem, demonFanMenuItem, klondikeMenuItem;
+
+	/**
+	 * 
+	 * Move card to an absolute position in a component
+	 * 
+	 * @param c the card to be moved
+	 * @param x coordinate of card destination
+	 * @param y coordinate of card destination
+	 * @return the card with the changed position
+	 * 
+	 */
+	public static Card moveCard(Card c, int x, int y) {
+		c.setBounds(new Rectangle(new Point(x, y), new Dimension(Card.CARD_WIDTH + 10, Card.CARD_HEIGHT + 10)));
+		c.setXY(new Point(x, y));
+		return c;
 	}
 
 	/**
-	 * Initialize the panel
+	 * Change the score of the game with the specified value
+	 * 
+	 * @param deltaScore the change value
 	 */
-	private void initPanel() {
+	protected static void setScore(int deltaScore) {
+		Solitaire.score += deltaScore;
+		String newScore = "Score: " + Solitaire.score;
+		scoreBox.setText(newScore);
+		scoreBox.repaint();
+	}
 
-		setLayout(null);
-		setSize(width, (height - 60));
-		setBackground(new Color(0, 80, 0));
+	/**
+	 * Update the timer of the game and the display
+	 */
+	protected static void updateTimer() {
 
-		addMouseListener(new CardMovementManager());
-		addMouseMotionListener(new CardMovementManager());
+		Solitaire.time += 1;
+		// every 10 seconds elapsed we take away 2 points
+		if (Solitaire.time % 10 == 0) {
+			setScore(-2);
+		}
+
+		String time = "Seconds: " + Solitaire.time;
+
+		// Fix the clock inconsistencies in updating the text field
+		SwingUtilities.invokeLater(() -> {
+			timeBox.setText(time);
+			timeBox.repaint();
+		});
+
+	}
+
+	protected static void startTimer() {
+		scoreClock = new ScoreClock();
+		// set the timer to update every second
+		timer.scheduleAtFixedRate(scoreClock, 1000, 1000);
+		timeRunning = true;
+	}
+
+	// the pause timer button uses this
+	protected static void toggleTimer() {
+		if (timeRunning && scoreClock != null) {
+			scoreClock.cancel();
+			timeRunning = false;
+		} else {
+			startTimer();
+		}
+	}
+
+	/**
+	 * 
+	 * Update the time tracker
+	 *
+	 */
+	private static class ScoreClock extends TimerTask {
+		@Override
+		public void run() {
+			updateTimer();
+		}
+	}
+
+	/**
+	 * Refresh the game and restart everything
+	 */
+	private static class NewGameListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+
+			if (currentGame.equals(GameType.Klondike)) {
+
+				freshKlondike();
+
+			} else if (currentGame.equals(GameType.DealersDozen)) {
+
+				freshDealersDozen();
+
+			}
+
+		}
 
 	}
 
 	/**
-	 * Start the game
+	 * Toggle the time tracker
+	 *
 	 */
-	private void startGame() {
+	private static class ToggleTimerListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			toggleTimer();
+			if (!timeRunning) {
 
-		// Initial the game components
+				toggleTimerButton.setText("Start Timer");
 
-		if (foundationStacks == null) {
-			foundationStacks = new FinalStack[FOUNDATION_STACKS];
+			} else {
+
+				toggleTimerButton.setText("Pause Timer");
+
+			}
 		}
-
-		if (tableauStacks == null) {
-			tableauStacks = new CardStack[TABLEAU_STACKS];
-		}
-
-		if (wastePile == null) {
-			wastePile = new CardStack(false);
-		}
-
-		if (reversePile == null) {
-			reversePile = new CardStack(false);
-		}
-
-		for (int i = 0; i < foundationStacks.length; i++) {
-			foundationStacks[i] = new FinalStack();
-		}
-
-		for (int i = 0; i < tableauStacks.length; i++) {
-			tableauStacks[i] = new CardStack(false);
-		}
-
-		reversePile = new CardStack(false);
-		wastePile = new CardStack(false);
-		deck = new CardStack(true);
-		deck.shuffle();
-
-		// Get the twos from the deck
-//		Vector<Card> twos = deck.getAllCardsWithValue(Card.Value.TWO);
-//
-//		if (twos.size() == 4) {
-//			for (int i = 0; i < foundationStacks.length; i++) {
-//				foundationStacks[i].push(deck.removeCard(i));
-//			}
-//		}
-
-		// Dealing new game
-		for (int x = 0; x < tableauStacks.length; x++) {
-
-			Card c = deck.pop().setFaceup();
-			tableauStacks[x].putFirst(c);
-
-		}
-
-		for (int i = 0; i < 12; i++) {
-			Card c = deck.pop().setFaceup();
-			reversePile.putFirst(c);
-		}
-
-		drawStacks();
 
 	}
 
-	public void drawStacks() {
+	/**
+	 * Show a rules dialog of the current playing game
+	 */
+	private static class ShowRulesListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
 
-		add(Solitaire.moveCard(deckPlaceHolder, DECK_POS.x, DECK_POS.y));
+			JDialog ruleFrame = new JDialog(frame, true);
+			ruleFrame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+			ruleFrame.setSize(600, 400);
 
-		// initialize & place final (foundation) decks/stacks
-		for (int x = 0; x < foundationStacks.length; x++) {
-			foundationStacks[x].setXY((FOUNDATION_POS.x + (x * Card.CARD_WIDTH)) + 10, FOUNDATION_POS.y);
-			add(foundationStacks[x]);
+			JEditorPane rulesTextPane = new JEditorPane("text/html", "");
+			rulesTextPane.setEditable(false);
+
+			if (currentGame.equals(GameType.Klondike)) {
+				rulesTextPane.setText(KLONDIKE_RULES);
+			} else if (currentGame.equals(GameType.DealersDozen)) {
+				rulesTextPane.setText(DEAL_DOZEN_RULES);
+			}
+
+			ruleFrame.add(new JScrollPane(rulesTextPane));
+			ruleFrame.setLocationRelativeTo(frame);
+			ruleFrame.setVisible(true);
+
 		}
-
-		// initialize & place play (tableau) decks/stacks
-		for (int x = 0; x < tableauStacks.length; x++) {
-			tableauStacks[x].setXY((TABLEAU_POS.x + (x * (Card.CARD_WIDTH + 10))), TABLEAU_POS.y);
-			add(tableauStacks[x]);
-		}
-
-		add(Solitaire.moveCard(reversePile.getLast(), REVERSE_POS.x, REVERSE_POS.y));
-
-		repaint();
-
 	}
 
-	private class CardMovementManager extends MouseAdapter {
+	/**
+	 * This class handles all of the logic of moving the Card components as well as
+	 * the game logic. This determines where Cards can be moved according to the
+	 * rules of KLONDIKE Solitaire
+	 */
+	private static class CardMovementManager extends MouseAdapter {
 
-		private Card prevCard = null;// tracking card for waste stack
-		private Card movedCard = null;// card moved from waste stack
+		/**
+		 * The card drawn on the holder
+		 * 
+		 * This should be the whole card stack
+		 */
+		private Card prevCard = null;
+
+		/**
+		 * The first card clicked
+		 */
+		private Card movedCard = null;
+
+		/**
+		 * Checking whether the source of a card is a foundation stack
+		 */
 		private boolean sourceIsFinalDeck = false;
-		private boolean putBackOnDeck = true;// used for waste card recycling
-		private boolean checkForWin = false;// should we check if game is over?
-		private boolean gameOver = true;// easier to negate this than affirm it
-		private Point start = null;// where mouse was clicked
-		private Point stop = null;// where mouse was released
-		private Card card = null; // card to be moved
-		// used for moving single cards
 
+		/**
+		 * Returning a card to the deck
+		 * 
+		 * This should not even exist, dealing should be used
+		 */
+		private boolean putBackOnDeck = true;
+
+		/**
+		 * Check whether the player has won the game
+		 */
+		private boolean checkForWin = false;
+
+		/**
+		 * To me this is repetition
+		 */
+		private boolean gameOver = true;
+
+		/**
+		 * Track the point where the mouse was clicked
+		 */
+		private Point start = null;
+
+		/**
+		 * Track the point where the mouse was released
+		 */
+		private Point stop = null;
+
+		/**
+		 * No idea what this one is used for
+		 */
+		private Card card = null;
+
+		/**
+		 * The CardSTack that the card(s) are take from
+		 */
 		private CardStack source = null;
 
+		/**
+		 * The CardSTack of where the cards a being taken to or dropped
+		 */
 		private CardStack dest = null;
-		// used for moving a stack of cards
+
+		/**
+		 * For carrying the cards on transit
+		 */
 		private CardStack transferStack = new CardStack(false);
 
 		/**
-		 * Check whether the move is valid on the playing stack
+		 * Check whether the move is valid on the playing stack, should be of
+		 * alternating suits based on color and lower than the destination card
 		 * 
 		 * @param source the card on transit
 		 * @param dest   the top card of the destination
@@ -191,25 +394,11 @@ public class DealDozenPanel extends JPanel {
 				// destination card should be opposite color
 				switch (s_suit) {
 				case SPADES:
-					if (d_suit != Card.Suit.HEARTS && d_suit != Card.Suit.DIAMONDS)
-						return false;
-					else
-						return true;
 				case CLUBS:
-					if (d_suit != Card.Suit.HEARTS && d_suit != Card.Suit.DIAMONDS)
-						return false;
-					else
-						return true;
+					return d_suit == Card.Suit.HEARTS || d_suit == Card.Suit.DIAMONDS;
 				case HEARTS:
-					if (d_suit != Card.Suit.SPADES && d_suit != Card.Suit.CLUBS)
-						return false;
-					else
-						return true;
 				case DIAMONDS:
-					if (d_suit != Card.Suit.SPADES && d_suit != Card.Suit.CLUBS)
-						return false;
-					else
-						return true;
+					return d_suit == Card.Suit.SPADES || d_suit == Card.Suit.CLUBS;
 				default:
 					return false;
 				}
@@ -242,15 +431,18 @@ public class DealDozenPanel extends JPanel {
 			start = e.getPoint();
 			boolean stopSearch = false;
 
+			statusBox.setText("");
+			transferStack.makeEmpty();
+
 			/*
 			 * Here we use transferStack to temporarily hold all the cards above the
 			 * selected card in case player wants to move a stack rather than a single card
 			 */
-			for (int x = 0; x < tableauStacks.length; x++) {
+			for (int x = 0; x < NUM_PLAY_DECKS; x++) {
 				if (stopSearch)
 					break;
 
-				source = tableauStacks[x];
+				source = playCardStack[x];
 
 				// Search the exact card pressed
 				for (Component ca : source.getComponents()) {
@@ -271,7 +463,7 @@ public class DealDozenPanel extends JPanel {
 			}
 			// SHOW (WASTE) CARD OPERATIONS
 			// display new show card
-			if (deckPlaceHolder.contains(start) && deck.showSize() > 0) {
+			if (newCardButton.contains(start) && deck.showSize() > 0) {
 				if (putBackOnDeck && prevCard != null) {
 					System.out.println("Putting back on show stack: ");
 					prevCard.getValue();
@@ -282,24 +474,24 @@ public class DealDozenPanel extends JPanel {
 				System.out.print("poping deck ");
 				deck.showSize();
 				if (prevCard != null)
-					remove(prevCard);
+					table.remove(prevCard);
 				Card c = deck.pop().setFaceup();
-				add(Solitaire.moveCard(c, WASTE_POS.x, WASTE_POS.y));
+				table.add(Solitaire.moveCard(c, SHOW_POS.x, SHOW_POS.y));
 				c.repaint();
-				repaint();
+				table.repaint();
 				prevCard = c;
 			}
 
 			// preparing to move show card
-			if (deckPlaceHolder.contains(start) && prevCard != null) {
+			if (newCardPlace.contains(start) && prevCard != null) {
 				movedCard = prevCard;
 			}
 
 			// FINAL (FOUNDATION) CARD OPERATIONS
-			for (int x = 0; x < foundationStacks.length; x++) {
+			for (int x = 0; x < NUM_FINAL_DECKS; x++) {
 
-				if (foundationStacks[x].contains(start)) {
-					source = foundationStacks[x];
+				if (final_cards[x].contains(start)) {
+					source = final_cards[x];
 					card = source.getLast();
 					transferStack.putFirst(card);
 					sourceIsFinalDeck = true;
@@ -319,18 +511,19 @@ public class DealDozenPanel extends JPanel {
 			// SHOW CARD MOVEMENTS
 			if (movedCard != null) {
 				// Moving from SHOW TO PLAY
-				for (int x = 0; x < tableauStacks.length; x++) {
-					dest = tableauStacks[x];
+				for (int x = 0; x < NUM_PLAY_DECKS; x++) {
+					dest = playCardStack[x];
 					// to empty play stack, only kings can go
 					if (dest.empty() && movedCard != null && dest.contains(stop)
 							&& movedCard.getValue() == Card.Value.KING) {
 						System.out.print("moving new card to empty spot ");
 						movedCard.setXY(dest.getXY());
-						remove(prevCard);
+						table.remove(prevCard);
 						dest.putFirst(movedCard);
-						repaint();
+						table.repaint();
 						movedCard = null;
 						putBackOnDeck = false;
+						setScore(5);
 						validMoveMade = true;
 						break;
 					}
@@ -339,27 +532,29 @@ public class DealDozenPanel extends JPanel {
 							&& validPlayStackMove(movedCard, dest.getFirst())) {
 						System.out.print("moving new card ");
 						movedCard.setXY(dest.getFirst().getXY());
-						remove(prevCard);
+						table.remove(prevCard);
 						dest.putFirst(movedCard);
-						repaint();
+						table.repaint();
 						movedCard = null;
 						putBackOnDeck = false;
+						setScore(5);
 						validMoveMade = true;
 						break;
 					}
 				}
 				// Moving from SHOW TO FINAL
-				for (int x = 0; x < foundationStacks.length; x++) {
-					dest = foundationStacks[x];
+				for (int x = 0; x < NUM_FINAL_DECKS; x++) {
+					dest = final_cards[x];
 					// only aces can go first
 					if (dest.empty() && dest.contains(stop)) {
 						if (movedCard.getValue() == Card.Value.ACE) {
 							dest.push(movedCard);
-							remove(prevCard);
+							table.remove(prevCard);
 							dest.repaint();
-							repaint();
+							table.repaint();
 							movedCard = null;
 							putBackOnDeck = false;
+							setScore(10);
 							validMoveMade = true;
 							break;
 						}
@@ -367,12 +562,13 @@ public class DealDozenPanel extends JPanel {
 					if (!dest.empty() && dest.contains(stop) && validFinalStackMove(movedCard, dest.getLast())) {
 						System.out.println("Destin" + dest.showSize());
 						dest.push(movedCard);
-						remove(prevCard);
+						table.remove(prevCard);
 						dest.repaint();
-						repaint();
+						table.repaint();
 						movedCard = null;
 						putBackOnDeck = false;
 						checkForWin = true;
+						setScore(10);
 						validMoveMade = true;
 						break;
 					}
@@ -381,42 +577,11 @@ public class DealDozenPanel extends JPanel {
 
 			// PLAY STACK OPERATIONS
 			if (card != null && source != null) { // Moving from PLAY TO PLAY
-				for (int x = 0; x < tableauStacks.length; x++) {
-					dest = tableauStacks[x];
+				for (int x = 0; x < NUM_PLAY_DECKS; x++) {
+					dest = playCardStack[x];
 					// MOVING TO POPULATED STACK
 					if (card.getFaceStatus() == true && dest.contains(stop) && source != dest && !dest.empty()
 							&& validPlayStackMove(card, dest.getFirst()) && transferStack.showSize() == 1) {
-						Card c = null;
-						if (sourceIsFinalDeck)
-							c = source.pop();
-						else
-							c = source.popFirst();
-
-						c.repaint();
-						// if play stack, turn next card up
-						if (source.getFirst() != null) {
-							Card temp = source.getFirst().setFaceup();
-							temp.repaint();
-							source.repaint();
-						}
-
-						dest.setXY(dest.getXY().x, dest.getXY().y);
-						dest.putFirst(c);
-
-						dest.repaint();
-
-						repaint();
-
-						System.out.print("Destination ");
-						dest.showSize();
-						if (sourceIsFinalDeck)
-							setScore(15);
-						else
-							setScore(10);
-						validMoveMade = true;
-						break;
-					} else if (dest.empty() && card.getValue() == Card.Value.KING && transferStack.showSize() == 1) {// MOVING
-																														// TO
 						Card c = null;
 						if (sourceIsFinalDeck)
 							c = source.pop();
@@ -436,7 +601,43 @@ public class DealDozenPanel extends JPanel {
 
 						dest.repaint();
 
-						repaint();
+						table.repaint();
+
+						System.out.print("Destination ");
+						dest.showSize();
+						if (sourceIsFinalDeck)
+							setScore(15);
+						else
+							setScore(10);
+						validMoveMade = true;
+						break;
+					} else if (dest.empty() && card.getValue() == Card.Value.KING && transferStack.showSize() == 1) {// MOVING
+																														// TO
+																														// EMPTY
+																														// STACK,
+																														// ONLY
+																														// KING
+																														// ALLOWED
+						Card c = null;
+						if (sourceIsFinalDeck)
+							c = source.pop();
+						else
+							c = source.popFirst();
+
+						c.repaint();
+						// if playstack, turn next card up
+						if (source.getFirst() != null) {
+							Card temp = source.getFirst().setFaceup();
+							temp.repaint();
+							source.repaint();
+						}
+
+						dest.setXY(dest.getXY().x, dest.getXY().y);
+						dest.putFirst(c);
+
+						dest.repaint();
+
+						table.repaint();
 
 						System.out.print("Destination ");
 						dest.showSize();
@@ -463,7 +664,7 @@ public class DealDozenPanel extends JPanel {
 						dest.setXY(dest.getXY().x, dest.getXY().y);
 						dest.repaint();
 
-						repaint();
+						table.repaint();
 						setScore(5);
 						validMoveMade = true;
 						break;
@@ -486,16 +687,20 @@ public class DealDozenPanel extends JPanel {
 						dest.setXY(dest.getXY().x, dest.getXY().y);
 						dest.repaint();
 
-						repaint();
+						table.repaint();
 						setScore(5);
 						validMoveMade = true;
 						break;
 					}
 				}
 				// from PLAY TO FINAL
-				for (int x = 0; x < foundationStacks.length; x++) {
-					dest = foundationStacks[x];
+				for (int x = 0; x < NUM_FINAL_DECKS; x++) {
+					dest = final_cards[x];
 
+					table.setLayout(null);
+					table.setBackground(new Color(0, 200, 0));
+					table.addMouseListener(new CardMovementManager());
+					table.addMouseMotionListener(new CardMovementManager());
 					if (card.getFaceStatus() == true && source != null && dest.contains(stop) && source != dest) {// TO
 																													// EMPTY
 																													// STACK
@@ -516,7 +721,7 @@ public class DealDozenPanel extends JPanel {
 
 								dest.repaint();
 
-								repaint();
+								table.repaint();
 
 								System.out.print("Destination ");
 								dest.showSize();
@@ -540,7 +745,7 @@ public class DealDozenPanel extends JPanel {
 
 							dest.repaint();
 
-							repaint();
+							table.repaint();
 
 							System.out.print("Destination ");
 							dest.showSize();
@@ -555,12 +760,16 @@ public class DealDozenPanel extends JPanel {
 				}
 			} // end cycle through play decks
 
+			// SHOWING STATUS MESSAGE IF MOVE INVALID
+			if (!validMoveMade && dest != null && card != null) {
+				statusBox.setText("That Is Not A Valid Move");
+			}
 			// CHECKING FOR WIN
 			if (checkForWin) {
 				boolean gameNotOver = false;
 				// cycle through final decks, if they're all full then game over
-				for (int x = 0; x < foundationStacks.length; x++) {
-					dest = foundationStacks[x];
+				for (int x = 0; x < NUM_FINAL_DECKS; x++) {
+					dest = final_cards[x];
 					if (dest.showSize() != 13) {
 						// one deck is not full, so game is not over
 						gameNotOver = true;
@@ -572,8 +781,8 @@ public class DealDozenPanel extends JPanel {
 			}
 
 			if (checkForWin && gameOver) {
-				JOptionPane.showMessageDialog(null, "Congratulations! You've Won!");
-				// statusBox.setText("Game Over!");
+				JOptionPane.showMessageDialog(table, "Congratulations! You've Won!");
+				statusBox.setText("Game Over!");
 			}
 			// RESET VARIABLES FOR NEXT EVENT
 			start = null;
@@ -584,12 +793,186 @@ public class DealDozenPanel extends JPanel {
 			sourceIsFinalDeck = false;
 			checkForWin = false;
 			gameOver = false;
-		}// end mousePressed()
-
-		private void setScore(int i) {
-			// TODO Auto-generated method stub
-
 		}
 	}
 
+	private static void freshKlondike() {
+
+		currentGame = GameType.Klondike;
+
+		deck = new CardStack(true);
+		deck.shuffle();
+
+		table.removeAll();
+		table.setSize(TABLE_WIDTH, TABLE_HEIGHT - (statusBarPanel.getHeight()));
+
+		table.setLayout(null);
+		table.setBackground(new Color(0, 200, 0));
+		table.addMouseListener(new CardMovementManager());
+		table.addMouseMotionListener(new CardMovementManager());
+
+		// reset stacks if user starts a new game in the middle of one
+		if (playCardStack != null && final_cards != null) {
+
+			for (int x = 0; x < NUM_PLAY_DECKS; x++) {
+				playCardStack[x].makeEmpty();
+			}
+
+			for (int x = 0; x < NUM_FINAL_DECKS; x++) {
+				final_cards[x].makeEmpty();
+			}
+
+		}
+		// initialize & place final (foundation) decks/stacks
+		final_cards = new FinalStack[NUM_FINAL_DECKS];
+
+		for (int x = 0; x < NUM_FINAL_DECKS; x++) {
+			final_cards[x] = new FinalStack();
+
+			final_cards[x].setXY((FINAL_POS.x + (x * Card.CARD_WIDTH)) + 10, FINAL_POS.y);
+			table.add(final_cards[x]);
+
+		}
+		// place new card distribution button
+		table.add(moveCard(newCardButton, DECK_POS.x, DECK_POS.y));
+		// initialize & place play (tableau) decks/stacks
+		playCardStack = new CardStack[NUM_PLAY_DECKS];
+		for (int x = 0; x < NUM_PLAY_DECKS; x++) {
+			playCardStack[x] = new CardStack(false);
+			playCardStack[x].setXY((DECK_POS.x + (x * (Card.CARD_WIDTH + 10))), PLAY_POS.y);
+
+			table.add(playCardStack[x]);
+		}
+
+		// Dealing new game
+		for (int x = 0; x < NUM_PLAY_DECKS; x++) {
+
+			Card c = deck.pop().setFaceup();
+			playCardStack[x].putFirst(c);
+
+			for (int y = x + 1; y < NUM_PLAY_DECKS; y++) {
+				playCardStack[y].putFirst(c = deck.pop());
+			}
+		}
+
+		mainPanel.removeAll();
+		mainPanel.add(table, BorderLayout.CENTER);
+		mainPanel.add(statusBarPanel, BorderLayout.SOUTH);
+		mainPanel.repaint();
+
+		// Reset the timer
+		time = 0;
+		startTimer();
+	}
+
+	public static void main(String[] args) {
+
+		Container contentPane = frame.getContentPane();
+
+		frame.setSize(TABLE_WIDTH, TABLE_HEIGHT);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		// Initialize the menu bar
+		initMenuBar();
+
+		// Set the menu bar on the frame
+		frame.setJMenuBar(theMenuBar);
+
+		// Setup the main panel
+		mainPanel.setLayout(new BorderLayout());
+
+		// Setup the status bar
+		initStatusBar();
+		mainPanel.add(statusBarPanel, BorderLayout.SOUTH);
+
+		freshDealersDozen();
+
+		contentPane.add(mainPanel);
+
+		frame.setLocationRelativeTo(null);
+		frame.setVisible(true);
+
+	}
+
+	private static void initStatusBar() {
+
+		newGameButton.addActionListener(new NewGameListener());
+
+		showRulesButton.addActionListener(new ShowRulesListener());
+
+		gameTitle.setText("<b>Dealer's Dozen Solitaire</b> CPSC 4900, Fall 2020");
+		gameTitle.setEditable(false);
+		gameTitle.setOpaque(false);
+
+		scoreBox.setText("Score: 0");
+		scoreBox.setEditable(false);
+		scoreBox.setOpaque(false);
+
+		timeBox.setText("Seconds: 0");
+		timeBox.setEditable(false);
+		timeBox.setOpaque(false);
+
+		toggleTimerButton.addActionListener(new ToggleTimerListener());
+
+		statusBox.setEditable(false);
+		statusBox.setOpaque(false);
+
+		statusBarPanel.add(gameTitle);
+		statusBarPanel.add(newGameButton);
+		statusBarPanel.add(showRulesButton);
+		statusBarPanel.add(toggleTimerButton);
+		statusBarPanel.add(timeBox);
+		statusBarPanel.add(statusBox);
+		statusBarPanel.add(scoreBox);
+
+	}
+
+	/**
+	 * Setup the menu bar
+	 */
+	private static void initMenuBar() {
+
+		theMenuBar = new JMenuBar();
+
+		fileMenu = new JMenu("File");
+		quitMenuItem = new JMenuItem("Quit");
+		quitMenuItem.addActionListener(e -> System.exit(0));
+		fileMenu.add(quitMenuItem);
+
+		theMenuBar.add(fileMenu);
+
+		gameMenu = new JMenu("Game");
+		klondikeMenuItem = new JMenuItem("Klondike");
+		klondikeMenuItem.addActionListener(e -> freshKlondike());
+		gameMenu.add(klondikeMenuItem);
+		dealersDozenMenuItem = new JMenuItem("Dealers Dozen");
+		dealersDozenMenuItem.addActionListener(e -> freshDealersDozen());
+		gameMenu.add(dealersDozenMenuItem);
+
+		duchessMenuItem = new JMenuItem("Duchess");
+		gameMenu.add(duchessMenuItem);
+		doubleMenuItem = new JMenuItem("Double");
+		gameMenu.add(doubleMenuItem);
+		dawsonMenuItem = new JMenuItem("Dawson");
+		gameMenu.add(dawsonMenuItem);
+		divorceMenuItem = new JMenuItem("Divorce");
+		gameMenu.add(divorceMenuItem);
+		demonFanMenuItem = new JMenuItem("Demon Fan");
+		gameMenu.add(demonFanMenuItem);
+
+		theMenuBar.add(gameMenu);
+	}
+
+	private static void freshDealersDozen() {
+		mainPanel.removeAll();
+		mainPanel.add(new DealersDozenPanel(TABLE_WIDTH, (Card.CARD_HEIGHT * 4) - (statusBarPanel.getHeight())),
+				BorderLayout.CENTER);
+		mainPanel.add(statusBarPanel, BorderLayout.SOUTH);
+		mainPanel.repaint();
+		currentGame = GameType.DealersDozen;
+
+		time = 0;
+
+		startTimer();
+	}
 }

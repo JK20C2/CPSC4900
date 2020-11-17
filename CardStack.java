@@ -1,4 +1,4 @@
-package internal;
+//package internal;
 
 import java.awt.Graphics;
 import java.awt.Point;
@@ -82,7 +82,7 @@ public class CardStack extends JComponent {
 	 * @return Vector of the cards that match that value from the deck
 	 */
 	public Vector<Card> getAllCardsWithValue(Card.Value value) {
-		
+
 		System.out.println("Thread: " + Thread.currentThread().getName());
 		Vector<Card> suitCards = new Vector<>();
 
@@ -234,4 +234,9 @@ public class CardStack extends JComponent {
 
 		}
 	}
+
+	public Vector<Card> getAllCards() {
+		return v;
+	}
+	
 }// END CardStack

@@ -1,4 +1,4 @@
-package internal;
+//package internal;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -13,27 +13,23 @@ import main.Solitaire;
  * Adapts the CardStack to be used as the final
  * (foundation) stack
  */
-public class FinalStack extends CardStack
-{
+public class FinalStack extends CardStack {
 
 	private static final long serialVersionUID = 1L;
 
-	public FinalStack()
-	{
+	public FinalStack() {
 		super(false);
 	}
 
 	@Override
-	public void setXY(int x, int y)
-	{
+	public void setXY(int x, int y) {
 		_x = x;
 		_y = y;
 		setBounds(_x, _y, Card.CARD_WIDTH + 10, Card.CARD_HEIGHT + 10);
 	}
 
 	@Override
-	public boolean contains(Point p)
-	{
+	public boolean contains(Point p) {
 		Rectangle rect = new Rectangle(_x, _y, Card.CARD_WIDTH + 10, Card.CARD_HEIGHT + 10);
 		return (rect.contains(p));
 	}
@@ -42,14 +38,11 @@ public class FinalStack extends CardStack
 	 * We draw this stack one card on top of the other
 	 */
 	@Override
-	protected void paintComponent(Graphics g)
-	{
+	protected void paintComponent(Graphics g) {
 		removeAll();
-		if (!empty())
-		{
+		if (!empty()) {
 			add(Solitaire.moveCard(this.getLast(), 1, 1));
-		} else
-		{
+		} else {
 			// draw back of card if empty
 			Graphics2D g2d = (Graphics2D) g;
 			RoundRectangle2D rect = new RoundRectangle2D.Double(0, 0, Card.CARD_WIDTH, Card.CARD_HEIGHT,
@@ -62,4 +55,3 @@ public class FinalStack extends CardStack
 
 	}
 }
-
