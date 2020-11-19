@@ -5,8 +5,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Vector;
 
+import javax.swing.JOptionPane;
+
 import client.Solitaire;
 import models.Card;
+import models.GameType;
 import views.components.JCard;
 import views.components.JCardStack;
 import views.components.JCardStack.StackType;
@@ -50,7 +53,7 @@ public class CardMouseListener extends MouseAdapter {
 			if (destContainer instanceof JCardStack) {
 				JCardStack destStack = (JCardStack) destContainer;
 
-				// Handle to tableau movement
+				// Handles the tableau movement
 
 				if (destStack.getStackType().equals(JCardStack.StackType.Tableau)) {
 					if ((destinationCard.getCard().getValue().getVal() == originCard.getCard().getValue().getVal() + 1)
@@ -159,6 +162,8 @@ public class CardMouseListener extends MouseAdapter {
 
 						solitaire.drawCardStacks();
 					}
+					
+					checkIfGameWon();
 				}
 			}
 
@@ -196,7 +201,8 @@ public class CardMouseListener extends MouseAdapter {
 
 			}
 
-			if (card.getValue().equals(Card.Value.KING)) {
+			if (card.getValue().equals(Card.Value.KING) ||
+			(solitaire.getCurrentGame().equals(GameType.DEALERSDOZEN))) {
 
 				Container originContainer = originCard.getParent();
 
@@ -276,5 +282,22 @@ public class CardMouseListener extends MouseAdapter {
 	@Override
 	public void mouseDragged(MouseEvent e) {
 		super.mouseDragged(e);
+	}
+	
+	public void checkIfGameWon() {
+
+		if (solitaire.gameWon()) {
+			int result = JOptionPane.showConfirmDialog(solitaire.getDisplay(),
+					"Do you want a new game or exit the appilaction?", "Game won", JOptionPane.YES_NO_OPTION,
+					JOptionPane.INFORMATION_MESSAGE);
+
+			if (result == JOptionPane.YES_OPTION) {
+				solitaire.refreshGame();
+			}
+
+			if (result == JOptionPane.NO_OPTION) {
+				System.exit(0);
+			}
+		}
 	}
 }

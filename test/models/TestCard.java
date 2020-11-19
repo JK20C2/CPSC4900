@@ -3,7 +3,7 @@ package models;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.awt.Color;
-
+// I used it to test if the Card class is setup appropriately
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;

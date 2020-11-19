@@ -3,6 +3,8 @@ package controllers.dealersdozen;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import javax.swing.JOptionPane;
+
 import client.Solitaire;
 import views.components.JCardStack;
 
@@ -54,8 +56,9 @@ public class CardStackMouseListener extends MouseAdapter {
 	@Override
 	public void mouseClicked(MouseEvent e) {
 		super.mouseClicked(e);
-
-		if (jCardStack.getStackType().equals(JCardStack.StackType.Deck)) {
+        
+		if (solitaire.getRedeals() > 0) {
+        	if (jCardStack.getStackType().equals(JCardStack.StackType.Deck)) {
 
 			for (int i = 0; i < solitaire.getDealtCards().size(); i++) {
 				solitaire.getDeck().add(solitaire.getDealtCards().get(i).setFaceUp(false));
@@ -64,8 +67,16 @@ public class CardStackMouseListener extends MouseAdapter {
 			solitaire.getDealtCards().clear();
 
 			solitaire.drawCardStacks();
+			
+			solitaire.decrementRedeals();
 		}
 
+	} else {
+		
+		JOptionPane.showMessageDialog(solitaire.getDisplay(), "Sorry you finished your redeals", "Redealing",
+				JOptionPane.WARNING_MESSAGE);
+			 
 	}
 
+	}
 }

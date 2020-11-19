@@ -221,5 +221,9 @@ public class Display extends JFrame {
 		JOptionPane.showMessageDialog(this, gameName + " not yet implemented", "Change Game",
 				JOptionPane.WARNING_MESSAGE);
 	}
+	
+	public void updateRedeals(int howMany) {
+		redealsLeft.setText("Redeals Left: " + howMany);
+	}
 
 }

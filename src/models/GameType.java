@@ -29,6 +29,7 @@ public enum GameType {
 	private Point foundationPosition;
 	private Point tableauPosition;
 	private String rules;
+	private int redeals;
 
 	/**
 	 * @param foundationStacksCount
@@ -87,6 +88,10 @@ public enum GameType {
 
 	public String getRules() {
 		return rules;
+	}
+	
+	public int getRedeals() {
+		return redeals;
 	}
 
 }
