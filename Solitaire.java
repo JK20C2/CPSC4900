@@ -149,7 +149,7 @@ public class Solitaire {
 		}
 
 	
-		redeals = 2; //currentGame.getRedeals();
+		redeals = 2; //currentGame.getRedeals(); This adds the redeals graphic and sets it to 2
 	
 	}
 	
