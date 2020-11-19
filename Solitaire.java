@@ -27,6 +27,7 @@ public class Solitaire {
 	private Vector<Card>[] foundationStacks;
 	private Vector<Card>[] tableauStacks;
 	private Vector<Card> reverseStack;
+	private int redeals;
 
 	/**
 	 * Keep track of time
@@ -59,8 +60,9 @@ public class Solitaire {
 	public void initDeck() {
 
 		deck.clear();
-
-		for (Card.Suit suit : Card.Suit.values()) {
+        dealtCards.clear();
+		
+        for (Card.Suit suit : Card.Suit.values()) {
 			for (Card.Value value : Card.Value.values()) {
 				deck.add(new Card(suit, value));
 			}
@@ -146,7 +148,11 @@ public class Solitaire {
 			}
 		}
 
+	
+		redeals = 2; //currentGame.getRedeals();
+	
 	}
+	
 
 	/**
 	 * Return the game display
@@ -332,5 +338,37 @@ public class Solitaire {
 
 	public void updateScore(int change) {
 		score += change;
+	}
+	
+	public boolean gameWon() {
+
+		boolean won = true;
+
+		for (int i = 0; i < foundationStacks.length; i++) {
+			if (foundationStacks[i].size() != 13)
+				won = false;
+		}
+
+		for (int i = 0; i < tableauStacks.length; i++) {
+			if (tableauStacks[i].size() != 0)
+				won = false;
+		}
+
+		if (deck.size() != 0)
+			won = false;
+
+		return won;
+	}
+
+	public void decrementRedeals() {
+		redeals--;
+
+		display.updateRedeals(redeals);
+	}
+
+	public int getRedeals() {
+		
+		return this.redeals;
+		
 	}
 }

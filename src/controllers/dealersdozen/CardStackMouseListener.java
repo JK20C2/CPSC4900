@@ -69,11 +69,14 @@ public class CardStackMouseListener extends MouseAdapter {
 			solitaire.drawCardStacks();
 			
 			solitaire.decrementRedeals();
+
+			JOptionPane.showMessageDialog(solitaire.getDisplay(), "Here is another redeal", "Redealing",
+				JOptionPane.WARNING_MESSAGE);
 		}
 
-	} else {
+	} 	else if (solitaire.getRedeals() <= 0) {
 		
-		JOptionPane.showMessageDialog(solitaire.getDisplay(), "Sorry you finished your redeals", "Redealing",
+		JOptionPane.showMessageDialog(solitaire.getDisplay(), "There are no more redeals left", "Redealing",
 				JOptionPane.WARNING_MESSAGE);
 			 
 	}

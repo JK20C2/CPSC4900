@@ -149,7 +149,7 @@ public class Solitaire {
 		}
 
 	
-		redeals = currentGame.getRedeals();
+		redeals = 2; //currentGame.getRedeals();
 	
 	}
 	
